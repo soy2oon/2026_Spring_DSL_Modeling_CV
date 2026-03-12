@@ -28,7 +28,7 @@ except ImportError:
 
 # pose_learn.py 연동 (주먹 자세 학습)
 try:
-    from pose_learn import load_samples, is_punch_from_learned
+    from .pose_learn import load_samples, is_punch_from_learned
 except ImportError:
     load_samples = None
     is_punch_from_learned = None

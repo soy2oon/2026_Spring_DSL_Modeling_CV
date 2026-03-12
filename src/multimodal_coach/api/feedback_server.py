@@ -7,7 +7,7 @@ from pydantic import BaseModel, Field
 from openai import OpenAI
 from json_repair import repair_json
 
-from event_analyzer import EventAnalyzerInput, run_rule_based_mvp
+from ..pipelines.audio.event_analyzer import EventAnalyzerInput, run_rule_based_mvp
 
 
 # ========= LM Studio 설정 =========

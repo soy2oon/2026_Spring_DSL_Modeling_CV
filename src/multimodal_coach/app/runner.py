@@ -13,16 +13,32 @@ except ImportError:
     sf = None
 
 # Local imports
-from Test2_MP import PoseAnalyzer, AlertChecker, OverlayAlertPresenter, LEARNED_PUNCH_PATH, PoseLandmarkIndex
-from test3 import SpeechKaraokeTrainer, _load_subtitles, _draw_subtitle_karaoke
-from pose_comparator import PoseComparator
-from gaze_anxiety_detector import GazeAnxietyDetector
-from key_pose_extractor import KeyPoseExtractor
+from ..pipelines.vision.pose_analyzer import (
+    PoseAnalyzer,
+    AlertChecker,
+    OverlayAlertPresenter,
+    LEARNED_PUNCH_PATH,
+    PoseLandmarkIndex,
+    AlertMessage,
+)
+from ..pipelines.vision.karaoke import SpeechKaraokeTrainer, _load_subtitles, _draw_subtitle_karaoke
+from ..pipelines.vision.pose_comparator import PoseComparator
+from ..pipelines.vision.gaze import GazeAnxietyDetector
+from ..pipelines.vision.key_pose_extractor import KeyPoseExtractor
 try:
-    from audio_analyzer import AudioAnalyzer, AudioEvaluator
+    from ..pipelines.audio.audio_analyzer import AudioAnalyzer, AudioEvaluator
 except ImportError:
     AudioAnalyzer = None
     AudioEvaluator = None
+
+REPO_ROOT = Path(__file__).resolve().parents[3]
+ASSETS_DIR = REPO_ROOT / "assets"
+REFERENCE_VIDEO_PATH = ASSETS_DIR / "reference_videos" / "Obama's 2004 DNC keynote speech.mp4"
+REFERENCE_AUDIO_PATH = ASSETS_DIR / "reference_audio" / "Obama's 2004 DNC keynote speech.wav"
+REFERENCE_JSON_PATH = ASSETS_DIR / "derived" / "Obama's 2004 DNC keynote speech.json"
+REFERENCE_RAW_POSE_PATH = ASSETS_DIR / "derived" / "Obama's 2004 DNC keynote speech_raw.npy"
+REFERENCE_SUBS_PATH = ASSETS_DIR / "subtitles" / "Obama's 2004 DNC keynote speech_subs.json"
+REFERENCE_AUDIO_DIR = ASSETS_DIR / "reference_audio"
 
 class AppMode(Enum):
     DEFAULT = "DEFAULT"     
@@ -131,13 +147,13 @@ class Test4App:
 
     def load_karaoke_video(self, target_mode):
         # Hardcoded for now. In a real app, use a file dialog.
-        ref_video_path = "Obama's 2004 DNC keynote speech.mp4"
-        ref_json_path = "Obama's 2004 DNC keynote speech.json"
-        subs_path = "Obama's 2004 DNC keynote speech_subs.json"
+        ref_video_path = REFERENCE_VIDEO_PATH
+        ref_json_path = REFERENCE_JSON_PATH
+        subs_path = REFERENCE_SUBS_PATH
         
         # Audio Extraction
-        audio_path = "Obama's 2004 DNC keynote speech.wav"
-        if not os.path.exists(audio_path):
+        audio_path = REFERENCE_AUDIO_PATH
+        if not audio_path.exists():
             print("Extracting audio from video...")
             os.system(f"ffmpeg -i \"{ref_video_path}\" -q:a 0 -map a \"{audio_path}\" -y")
         self.ref_audio_path = audio_path
@@ -149,8 +165,8 @@ class Test4App:
             print("Pre-generating speed variants for audio...")
             base_audio = AudioSegment.from_file(self.ref_audio_path)
             for s in [0.5, 1.0, 1.25, 1.5, 2.0]:
-                out_path = f"fast_audio_{s}.wav"
-                if not os.path.exists(out_path):
+                out_path = REFERENCE_AUDIO_DIR / f"fast_audio_{s}.wav"
+                if not out_path.exists():
                     if s == 1.0:
                         base_audio.export(out_path, format="wav")
                     else:
@@ -174,21 +190,21 @@ class Test4App:
             self.subtitles = _load_subtitles(subs_path)
             
             # Load or extract raw poses for DTW
-            raw_pose_path = "Obama's 2004 DNC keynote speech_raw.npy"
-            if not os.path.exists(raw_pose_path):
+            raw_pose_path = REFERENCE_RAW_POSE_PATH
+            if not raw_pose_path.exists():
                 print("Extracting raw pose data from video for DTW...")
                 self._extract_raw_poses(ref_video_path, raw_pose_path)
             self.ref_raw_poses = np.load(raw_pose_path)
             self.user_pose_buffer = []
             
-            self.cap_ref = cv2.VideoCapture(ref_video_path)
+            self.cap_ref = cv2.VideoCapture(str(ref_video_path))
             self.speed_multiplier = 1.0
             self.karaoke_start_time = time.time()
             
             # Start playing audio
             current_audio = self.audio_speeds.get(1.0, self.ref_audio_path)
-            if os.path.exists(current_audio):
-                sound = pygame.mixer.Sound(current_audio)
+            if current_audio.exists():
+                sound = pygame.mixer.Sound(str(current_audio))
                 self.ref_audio_channel = sound.play()
             
             self.mode = target_mode
@@ -207,7 +223,7 @@ class Test4App:
             print(f"Error loading karaoke data: {e}")
             
     def _extract_raw_poses(self, video_path, out_path):
-        cap = cv2.VideoCapture(video_path)
+        cap = cv2.VideoCapture(str(video_path))
         frames = []
         with self.mp_holistic.Holistic(min_detection_confidence=0.5, min_tracking_confidence=0.5) as holistic:
             while cap.isOpened():
@@ -316,8 +332,8 @@ class Test4App:
             self.ref_audio_channel.stop()
         
         current_audio = self.audio_speeds.get(new_speed, self.ref_audio_path)
-        if os.path.exists(current_audio):
-            sound = pygame.mixer.Sound(current_audio)
+        if current_audio.exists():
+            sound = pygame.mixer.Sound(str(current_audio))
             self.ref_audio_channel = sound.play()
             
     def _render_default_mode(self, image, results):
@@ -340,10 +356,8 @@ class Test4App:
         gaze_msg = gaze_res.get('message', '')
         
         if gaze_status == "Calibrating":
-            from Test2_MP import AlertMessage
             alerts.append(AlertMessage(alert_type="gaze_calibrating", message=gaze_msg, severity="info"))
         elif gaze_status in ["Avoiding", "Shaking"]:
-            from Test2_MP import AlertMessage
             alerts.append(AlertMessage(alert_type="gaze_warning", message=f"Eye Tracking: {gaze_msg}", severity="warning"))
         # -------------------------------
             
@@ -404,8 +418,8 @@ class Test4App:
                 if self.ref_audio_channel:
                     self.ref_audio_channel.stop()
                     current_audio = self.audio_speeds.get(self.speed_multiplier, self.ref_audio_path)
-                    if os.path.exists(current_audio):
-                        sound = pygame.mixer.Sound(current_audio)
+                    if current_audio.exists():
+                        sound = pygame.mixer.Sound(str(current_audio))
                         self.ref_audio_channel = sound.play()
             elif self.mode == AppMode.KARAOKE_TEST:
                 # End of Test mode

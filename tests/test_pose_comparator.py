@@ -1,6 +1,6 @@
 import unittest
 import numpy as np
-from pose_comparator import PoseComparator
+from multimodal_coach.pipelines.vision.pose_comparator import PoseComparator
 
 class TestPoseComparator(unittest.TestCase):
     def setUp(self):
