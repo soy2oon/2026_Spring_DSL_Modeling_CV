@@ -1,0 +1,7 @@
+pandas
+opencv-python
+numpy
+torch
+mediapipe==0.10.14
+tabulate
+alive-progress

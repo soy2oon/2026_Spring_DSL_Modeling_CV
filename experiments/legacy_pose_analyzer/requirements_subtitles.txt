@@ -1,0 +1,5 @@
+# 자막 추출용 (extract_subtitles.py)
+# faster-whisper: openai-whisper 대비 가볍고 numba/llvmlite 불필요
+faster-whisper
+
+# ffmpeg 필요: brew install ffmpeg (macOS)

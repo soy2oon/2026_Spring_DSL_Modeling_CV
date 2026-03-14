@@ -1,0 +1,30 @@
+# Recommended Python: 3.11.x
+
+# Core framework (src/multimodal_coach + apps)
+numpy>=1.26,<2.0
+opencv-python>=4.10,<4.11
+mediapipe>=0.10.14,<0.11
+pillow>=10.4,<11
+pygame>=2.6,<2.7
+soundfile>=0.12.1,<0.13
+pydub>=0.25.1,<0.26
+scipy>=1.13,<1.14
+fastdtw>=0.3.4,<0.4
+librosa>=0.10.2,<0.11
+openai-whisper>=20231117,<2025
+sounddevice>=0.5,<0.6
+torch>=2.4,<2.6
+pandas>=2.2,<2.3
+opensmile>=2.5,<2.6
+silero-vad>=5.1,<6.0
+fastapi>=0.115,<0.116
+pydantic>=2.10,<2.11
+openai>=1.58,<2.0
+json-repair>=0.30,<0.31
+
+# Test
+pytest>=8.3,<8.4
+
+# Legacy / experiments (experiments/legacy_pose_analyzer)
+faster-whisper>=1.1,<1.2
+ultralytics>=8.3,<8.4

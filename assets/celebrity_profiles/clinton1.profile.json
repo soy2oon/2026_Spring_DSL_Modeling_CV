@@ -1,0 +1,28 @@
+{
+  "celebrity": "clinton1",
+  "source_video": "2026_Spring_DSL_Modeling_CV\\data\\clinton1.mp4",
+  "vision": {
+    "total_frames_analyzed": 687,
+    "avg_body_tilt_deg": 10.35,
+    "max_body_tilt_deg": 19.22,
+    "avg_tremor_level": 0.137,
+    "gaze_stable_ratio": 0.541,
+    "gaze_avoiding_ratio": 0.291,
+    "gaze_shaking_ratio": 0.036,
+    "alert_counts": {
+      "punch_gesture": 95,
+      "body_tilt": 361,
+      "body_tremor": 22,
+      "head_tilt": 54
+    }
+  },
+  "audio": {
+    "avg_energy": 0.0304,
+    "avg_pitch_hz": 334.4,
+    "pitch_std_hz": 154.0,
+    "voiced_ratio": 0.556,
+    "duration_sec": 22.9
+  },
+  "summary": "[clinton1] 발표 스타일 분석 요약\n- 자세: 눈에 띄는 몸 기울기 (평균 10.3°)\n- 움직임: 약간의 몸 움직임 (떨림 수준 0.14)\n- 시선: 보통 수준 아이컨택 (54% Stable)\n- 음량: 적당한 발성 에너지\n- 억양: 풍부한 음정 변화 (피치 표준편차 154Hz)\n- 유창성: 침묵 구간 많음 (유성음 비율 56%)",
+  "prompt": "Reference speaker: clinton1\nPosture: avg body tilt 10.3°, tremor level 0.14.\nGaze: stable 54%, avoiding 29%.\nVoice: energy 0.0304, pitch std 154Hz, voiced ratio 56%.\nUse these reference values to evaluate and give feedback to the user who is trying to emulate this speaking style."
+}

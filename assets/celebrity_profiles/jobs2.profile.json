@@ -1,0 +1,27 @@
+{
+  "celebrity": "jobs2",
+  "source_video": "2026_Spring_DSL_Modeling_CV\\data\\jobs2.mp4",
+  "vision": {
+    "total_frames_analyzed": 508,
+    "avg_body_tilt_deg": 17.81,
+    "max_body_tilt_deg": 36.41,
+    "avg_tremor_level": 0.394,
+    "gaze_stable_ratio": 0.03,
+    "gaze_avoiding_ratio": 0.671,
+    "gaze_shaking_ratio": 0.122,
+    "alert_counts": {
+      "body_tremor": 120,
+      "body_tilt": 359,
+      "punch_gesture": 14
+    }
+  },
+  "audio": {
+    "avg_energy": 0.0248,
+    "avg_pitch_hz": 189.2,
+    "pitch_std_hz": 34.4,
+    "voiced_ratio": 0.509,
+    "duration_sec": 17.0
+  },
+  "summary": "[jobs2] 발표 스타일 분석 요약\n- 자세: 눈에 띄는 몸 기울기 (평균 17.8°)\n- 움직임: 약간의 몸 움직임 (떨림 수준 0.39)\n- 시선: 시선 회피 빈번 (67% Avoiding)\n- 음량: 적당한 발성 에너지\n- 억양: 적당한 음정 변화 (34Hz)\n- 유창성: 침묵 구간 많음 (유성음 비율 51%)",
+  "prompt": "Reference speaker: jobs2\nPosture: avg body tilt 17.8°, tremor level 0.39.\nGaze: stable 3%, avoiding 67%.\nVoice: energy 0.0248, pitch std 34Hz, voiced ratio 51%.\nUse these reference values to evaluate and give feedback to the user who is trying to emulate this speaking style."
+}

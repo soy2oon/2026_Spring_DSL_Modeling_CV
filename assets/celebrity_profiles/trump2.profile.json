@@ -1,0 +1,25 @@
+{
+  "celebrity": "trump2",
+  "source_video": "2026_Spring_DSL_Modeling_CV\\data\\trump2.mp4",
+  "vision": {
+    "total_frames_analyzed": 541,
+    "avg_body_tilt_deg": 21.66,
+    "max_body_tilt_deg": 28.14,
+    "avg_tremor_level": 0.013,
+    "gaze_stable_ratio": 0.834,
+    "gaze_avoiding_ratio": 0.0,
+    "gaze_shaking_ratio": 0.0,
+    "alert_counts": {
+      "body_tilt": 541
+    }
+  },
+  "audio": {
+    "avg_energy": 0.026,
+    "avg_pitch_hz": 155.5,
+    "pitch_std_hz": 24.5,
+    "voiced_ratio": 0.704,
+    "duration_sec": 18.0
+  },
+  "summary": "[trump2] 발표 스타일 분석 요약\n- 자세: 눈에 띄는 몸 기울기 (평균 21.7°)\n- 움직임: 차분하고 안정적\n- 시선: 안정적인 아이컨택 (83% Stable)\n- 음량: 적당한 발성 에너지\n- 억양: 적당한 음정 변화 (24Hz)\n- 유창성: 유창하게 말함 (침묵 적음)",
+  "prompt": "Reference speaker: trump2\nPosture: avg body tilt 21.7°, tremor level 0.01.\nGaze: stable 83%, avoiding 0%.\nVoice: energy 0.0260, pitch std 24Hz, voiced ratio 70%.\nUse these reference values to evaluate and give feedback to the user who is trying to emulate this speaking style."
+}

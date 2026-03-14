@@ -1,0 +1,28 @@
+{
+  "celebrity": "robbins1",
+  "source_video": "2026_Spring_DSL_Modeling_CV\\data\\robbins1.mp4",
+  "vision": {
+    "total_frames_analyzed": 465,
+    "avg_body_tilt_deg": 29.33,
+    "max_body_tilt_deg": 60.24,
+    "avg_tremor_level": 0.501,
+    "gaze_stable_ratio": 0.0,
+    "gaze_avoiding_ratio": 0.647,
+    "gaze_shaking_ratio": 0.114,
+    "alert_counts": {
+      "body_tilt": 356,
+      "body_tremor": 163,
+      "head_tilt": 47,
+      "punch_gesture": 6
+    }
+  },
+  "audio": {
+    "avg_energy": 0.0733,
+    "avg_pitch_hz": 199.1,
+    "pitch_std_hz": 54.2,
+    "voiced_ratio": 0.427,
+    "duration_sec": 19.3
+  },
+  "summary": "[robbins1] 발표 스타일 분석 요약\n- 자세: 눈에 띄는 몸 기울기 (평균 29.3°)\n- 움직임: 눈에 띄는 몸 떨림 (수준 0.50)\n- 시선: 시선 회피 빈번 (65% Avoiding)\n- 음량: 크고 힘찬 발성\n- 억양: 풍부한 음정 변화 (피치 표준편차 54Hz)\n- 유창성: 침묵 구간 많음 (유성음 비율 43%)",
+  "prompt": "Reference speaker: robbins1\nPosture: avg body tilt 29.3°, tremor level 0.50.\nGaze: stable 0%, avoiding 65%.\nVoice: energy 0.0733, pitch std 54Hz, voiced ratio 43%.\nUse these reference values to evaluate and give feedback to the user who is trying to emulate this speaking style."
+}
