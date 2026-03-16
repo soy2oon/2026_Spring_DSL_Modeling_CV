@@ -41,6 +41,9 @@ REFERENCE_SUBS_PATH = ASSETS_DIR / "subtitles" / "Obama's 2004 DNC keynote speec
 REFERENCE_AUDIO_DIR = ASSETS_DIR / "reference_audio"
 
 class AppMode(Enum):
+    MODE_SELECTION = "MODE_SELECTION"
+    INTERVIEW_MODE = "INTERVIEW_MODE"
+    SPEECH_SELECTION = "SPEECH_SELECTION"
     DEFAULT = "DEFAULT"     
     KARAOKE_PRACTICE = "KARAOKE_PRACTICE"     
     KARAOKE_TEST = "KARAOKE_TEST"
@@ -60,7 +63,7 @@ def draw_button(img, text, x, y, w, h, bg_color, text_color):
 
 class Test4App:
     def __init__(self):
-        self.mode = AppMode.DEFAULT
+        self.mode = AppMode.MODE_SELECTION
         self.cap_webcam = cv2.VideoCapture(0)
         
         # UI State
@@ -129,16 +132,57 @@ class Test4App:
 
     def process_mouse_click(self, event, x, y, flags, param):
         if event == cv2.EVENT_LBUTTONDOWN:
-            # Clicked "Practice" or "Test"
-            px, py, pw, ph = self.practice_button['x'], self.practice_button['y'], self.practice_button['w'], self.practice_button['h']
-            tx, ty, tw, th = self.test_button['x'], self.test_button['y'], self.test_button['w'], self.test_button['h']
-            
-            if self.mode == AppMode.DEFAULT:
+            if self.mode == AppMode.MODE_SELECTION:
+                # Interview vs Speech mode
+                cx, cy = self.w_web // 2, self.h_web // 2
+                if cx - 220 <= x <= cx - 20 and cy - 40 <= y <= cy + 40:
+                    self.mode = AppMode.INTERVIEW_MODE
+                    print("Switched to Interview Mode")
+                elif cx + 20 <= x <= cx + 220 and cy - 40 <= y <= cy + 40:
+                    self.mode = AppMode.SPEECH_SELECTION
+                    print("Switched to Speech Selection Mode")
+                    
+            elif self.mode == AppMode.SPEECH_SELECTION:
+                # Back button
+                if 20 <= x <= 120 and 20 <= y <= 60:
+                    self.mode = AppMode.MODE_SELECTION
+                    return
+                    
+                # Speech choices: clinton, jobs, obama, robbins, trump (1 and 2)
+                cx = self.w_web // 2
+                speeches = ["clinton1", "clinton2", "jobs1", "jobs2", "obama1", "obama2", "robbins1", "robbins2", "trump1", "trump2"]
+                y_start = 150
+                for i, sp_name in enumerate(speeches):
+                    col = i % 2
+                    row = i // 2
+                    bx = cx - 220 + (col * 240)
+                    by = y_start + (row * 70)
+                    if bx <= x <= bx + 200 and by <= y <= by + 50:
+                        self.selected_ref_name = sp_name
+                        self.mode = AppMode.DEFAULT
+                        print(f"Selected Speech: {sp_name}")
+                        break
+                        
+            elif self.mode == AppMode.INTERVIEW_MODE:
+                # Back button
+                if 20 <= x <= 120 and 20 <= y <= 60:
+                    self.mode = AppMode.MODE_SELECTION
+                    
+            elif self.mode == AppMode.DEFAULT: # Speech Home Mode (after selecting a ref)
+                # Back button to re-select speech
+                if 20 <= x <= 120 and 20 <= y <= 60:
+                    self.mode = AppMode.SPEECH_SELECTION
+                    return
+                    
+                px, py, pw, ph = self.practice_button['x'], self.practice_button['y'], self.practice_button['w'], self.practice_button['h']
+                tx, ty, tw, th = self.test_button['x'], self.test_button['y'], self.test_button['w'], self.test_button['h']
+                
                 if px <= x <= px + pw and py <= y <= py + ph:
                     self.load_karaoke_video(AppMode.KARAOKE_PRACTICE)
                 elif tx <= x <= tx + tw and ty <= y <= ty + th:
                     self.mode = AppMode.COUNTDOWN
                     self.karaoke_start_time = time.time()
+                    
             elif self.mode in [AppMode.KARAOKE_PRACTICE, AppMode.TEST_RESULTS]:
                 # Back button in Practice or Result modes
                 btn_x = self.w_web * 2 - 160
@@ -146,15 +190,42 @@ class Test4App:
                     self.stop_karaoke_video()
 
     def load_karaoke_video(self, target_mode):
-        # Hardcoded for now. In a real app, use a file dialog.
-        ref_video_path = REFERENCE_VIDEO_PATH
-        ref_json_path = REFERENCE_JSON_PATH
-        subs_path = REFERENCE_SUBS_PATH
+        ref_name = getattr(self, 'selected_ref_name', "obama1")
+        if ref_name == "obama1" and not (REPO_ROOT / "data" / "obama1.mp4").exists():
+             # Fallback to the old default video name for compatibility if obama1 doesn't exist directly
+             ref_video_path = REPO_ROOT / "assets" / "reference_videos" / "Obama's 2004 DNC keynote speech.mp4"
+             ref_json_path = REPO_ROOT / "assets" / "derived" / "Obama's 2004 DNC keynote speech.json"
+             raw_pose_path = REPO_ROOT / "assets" / "derived" / "Obama's 2004 DNC keynote speech_raw.npy"
+             subs_path = REPO_ROOT / "assets" / "subtitles" / "Obama's 2004 DNC keynote speech_subs.json"
+             audio_path = REPO_ROOT / "assets" / "reference_audio" / "Obama's 2004 DNC keynote speech.wav"
+        else:
+             ref_video_path = REPO_ROOT / "data" / f"{ref_name}.mp4"
+             ref_json_path = REPO_ROOT / "assets" / "derived" / f"{ref_name}.json"
+             raw_pose_path = REPO_ROOT / "assets" / "derived" / f"{ref_name}_raw.npy"
+             subs_path = REPO_ROOT / "assets" / "subtitles" / f"{ref_name}_subs.json"
+             audio_path = REPO_ROOT / "assets" / "reference_audio" / f"{ref_name}.wav"
+             
+        # Mock JSON creation if missing (since new data videos don't have json files derived yet)
+        if not ref_json_path.exists():
+            print(f"Mocking reference JSON for {ref_name} as it is missing.")
+            cap = cv2.VideoCapture(str(ref_video_path))
+            fps = cap.get(cv2.CAP_PROP_FPS) or 30.0
+            frame_count = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+            dur_ms = cap.get(cv2.CAP_PROP_POS_MSEC)
+            cap.release()
+            mock_data = {
+                "fps": fps,
+                "frames": [{"timestamp_ms": i * (1000/fps)} for i in range(max(1, frame_count))]
+            }
+            import json
+            ref_json_path.parent.mkdir(parents=True, exist_ok=True)
+            with open(ref_json_path, "w", encoding="utf-8") as f:
+                json.dump(mock_data, f)
         
         # Audio Extraction
-        audio_path = REFERENCE_AUDIO_PATH
         if not audio_path.exists():
-            print("Extracting audio from video...")
+            print(f"Extracting audio from {ref_video_path}...")
+            audio_path.parent.mkdir(parents=True, exist_ok=True)
             os.system(f"ffmpeg -i \"{ref_video_path}\" -q:a 0 -map a \"{audio_path}\" -y")
         self.ref_audio_path = audio_path
         
@@ -165,7 +236,7 @@ class Test4App:
             print("Pre-generating speed variants for audio...")
             base_audio = AudioSegment.from_file(self.ref_audio_path)
             for s in [0.5, 1.0, 1.25, 1.5, 2.0]:
-                out_path = REFERENCE_AUDIO_DIR / f"fast_audio_{s}.wav"
+                out_path = REFERENCE_AUDIO_DIR / f"{self.ref_audio_path.stem}_{s}.wav"
                 if not out_path.exists():
                     if s == 1.0:
                         base_audio.export(out_path, format="wav")
@@ -187,10 +258,12 @@ class Test4App:
                 ref = json.load(f)
             self.ref_data = ref["frames"]
             self.fps = ref["fps"]
-            self.subtitles = _load_subtitles(subs_path)
+            if subs_path.exists():
+                self.subtitles = _load_subtitles(subs_path)
+            else:
+                self.subtitles = None
             
             # Load or extract raw poses for DTW
-            raw_pose_path = REFERENCE_RAW_POSE_PATH
             if not raw_pose_path.exists():
                 print("Extracting raw pose data from video for DTW...")
                 self._extract_raw_poses(ref_video_path, raw_pose_path)
@@ -293,7 +366,13 @@ class Test4App:
                 image.flags.writeable = True
 
                 # Determine View and Render
-                if self.mode == AppMode.DEFAULT:
+                if self.mode == AppMode.MODE_SELECTION:
+                    image = self._render_mode_selection(image)
+                elif self.mode == AppMode.SPEECH_SELECTION:
+                    image = self._render_speech_selection(image)
+                elif self.mode == AppMode.INTERVIEW_MODE:
+                    image = self._render_interview_mode(image, results)
+                elif self.mode == AppMode.DEFAULT:
                     image = self._render_default_mode(image, results)
                 elif self.mode in [AppMode.KARAOKE_PRACTICE, AppMode.KARAOKE_TEST]:
                     image = self._render_karaoke_mode(image, results)
@@ -336,6 +415,63 @@ class Test4App:
             sound = pygame.mixer.Sound(str(current_audio))
             self.ref_audio_channel = sound.play()
             
+    def _render_mode_selection(self, image):
+        """Initial landing screen to select Interview or Speech mode"""
+        overlay = image.copy()
+        cv2.rectangle(overlay, (0, 0), (self.w_web, self.h_web), (0,0,0), -1)
+        image = cv2.addWeighted(overlay, 0.85, image, 0.15, 0)
+        
+        cx, cy = self.w_web // 2, self.h_web // 2
+        cv2.putText(image, "Welcome to Multimodal Coach", (cx - 240, cy - 120), cv2.FONT_HERSHEY_SIMPLEX, 1.2, COLOR_TEXT, 3)
+        cv2.putText(image, "Select Practice Mode:", (cx - 150, cy - 80), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (200, 200, 200), 2)
+        
+        draw_button(image, "INTERVIEW MODE", cx - 220, cy - 40, 200, 80, (80, 80, 150), COLOR_TEXT)
+        draw_button(image, "SPEECH MODE", cx + 20, cy - 40, 200, 80, (150, 80, 80), COLOR_TEXT)
+        return image
+
+    def _render_speech_selection(self, image):
+        """Menu to select a famous speech for the karaoke mode"""
+        overlay = image.copy()
+        cv2.rectangle(overlay, (0, 0), (self.w_web, self.h_web), (0,0,0), -1)
+        image = cv2.addWeighted(overlay, 0.9, image, 0.1, 0)
+        
+        draw_button(image, "<- Back", 20, 20, 100, 40, (100, 100, 100), COLOR_TEXT)
+        
+        cx = self.w_web // 2
+        cv2.putText(image, "Select Reference Speech", (cx - 180, 80), cv2.FONT_HERSHEY_SIMPLEX, 1.0, COLOR_TEXT, 3)
+        
+        speeches = ["clinton1", "clinton2", "jobs1", "jobs2", "obama1", "obama2", "robbins1", "robbins2", "trump1", "trump2"]
+        y_start = 150
+        for i, sp_name in enumerate(speeches):
+            col = i % 2
+            row = i // 2
+            bx = cx - 220 + (col * 240)
+            by = y_start + (row * 70)
+            draw_button(image, sp_name.upper(), bx, by, 200, 50, (60, 100, 60), COLOR_TEXT)
+        
+        return image
+
+    def _render_interview_mode(self, image, results):
+        """Dedicated Interview Mode (Standard Practice)"""
+        if results.pose_landmarks:
+            self.mp_drawing.draw_landmarks(image, results.pose_landmarks, self.mp_holistic.POSE_CONNECTIONS)
+            
+        metrics = self.pose_analyzer.analyze(
+            results.pose_landmarks,
+            results.left_hand_landmarks,
+            results.right_hand_landmarks,
+        )
+        alerts = self.alert_checker.check_alerts(metrics)
+        gaze_res = self.gaze_detector.process_frame(image)
+        if gaze_res.get('status') in ["Avoiding", "Shaking"]:
+            alerts.append(AlertMessage(alert_type="gaze_warning", message=f"Eye Tracking: {gaze_res.get('message')}", severity="warning"))
+            
+        image = self.alert_presenter.update_and_show(alerts, image)
+        
+        cv2.putText(image, "INTERVIEW MODE: General Practice", (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.7, COLOR_ACCENT, 2)
+        draw_button(image, "<- Back", 20, 60, 100, 40, (100, 100, 100), COLOR_TEXT)
+        return image
+
     def _render_default_mode(self, image, results):
         """Standard test2 mode with Posture Feedback"""
         # Draw landmarks
@@ -364,14 +500,17 @@ class Test4App:
         image = self.alert_presenter.update_and_show(alerts, image)
         
         # State overlay
-        cv2.putText(image, "DEFAULT MODE: Posture Feedback Active", (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.7, COLOR_ACCENT, 2)
+        ref_name = getattr(self, 'selected_ref_name', 'obama1').upper()
+        cv2.putText(image, f"SPEECH MODE: Selected [{ref_name}]", (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.7, COLOR_ACCENT, 2)
         
-        # Draw "Select Video" Menu Buttons
+        draw_button(image, "<- Change Speech", 20, 50, 150, 40, (100, 100, 100), (255,255,255))
+        
+        # Draw Menu Buttons
         px, py, pw, ph = self.practice_button['x'], self.practice_button['y'], self.practice_button['w'], self.practice_button['h']
-        draw_button(image, "Practice Obama", px, py, pw, ph, (100, 100, 200), (255,255,255))
+        draw_button(image, f"Practice {ref_name}", px, py, pw, ph, (100, 100, 200), (255,255,255))
         
         tx, ty, tw, th = self.test_button['x'], self.test_button['y'], self.test_button['w'], self.test_button['h']
-        draw_button(image, "Test Obama", tx, ty, tw, th, (200, 100, 100), (255,255,255))
+        draw_button(image, f"Test {ref_name}", tx, ty, tw, th, (200, 100, 100), (255,255,255))
         
         return image
         
@@ -535,15 +674,17 @@ class Test4App:
             
             # Start a thread to compute the final audio metrics without hanging the UI loop
             def compute_scores():
-                # --- TEMP AUDIO BYPASS ---
-                # eval_res = AudioEvaluator.evaluate(self.test_audio_buffer, self.audio_analyzer.sample_rate)
-                # self.final_audio_score = eval_res
-                print("Skipping audio evaluation for now. Proceeding to pose score...")
-                self.final_audio_score = {
-                    "total_score": 0.0,
-                    "breakdown": {"Accuracy": 0.0, "Fluency": 0.0, "Pronunciation": 0.0}
-                }
-                # -----------------------
+                if AudioEvaluator and self.test_audio_buffer is not None:
+                    # Async evaluation to not block the main cv2 UI thread
+                    print("Starting async audio evaluation...")
+                    eval_res = AudioEvaluator.evaluate(self.test_audio_buffer, self.audio_analyzer.sample_rate)
+                    self.final_audio_score = eval_res
+                    print("Async evaluation finished!")
+                else:
+                    self.final_audio_score = {
+                        "total_score": 0.0,
+                        "breakdown": {"Accuracy": 0.0, "Fluency": 0.0, "Pronunciation": 0.0}
+                    }
                 
                 # Compute final pose score
                 if getattr(self, "test_pose_similarities", None) and len(self.test_pose_similarities) > 0:
